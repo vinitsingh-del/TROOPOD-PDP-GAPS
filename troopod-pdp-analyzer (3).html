@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Troopod -- PDP CRO Analyzer</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#000;--bg2:#0d0d0d;--bg3:#141414;
+  --purple:#8e3ff1;--purple2:#a855f7;--purple3:#c084fc;
+  --pg:rgba(142,63,241,.14);--pb:rgba(142,63,241,.32);
+  --w:#fff;--w80:rgba(255,255,255,.82);--w50:rgba(255,255,255,.52);
+  --w20:rgba(255,255,255,.22);--w08:rgba(255,255,255,.08);--w04:rgba(255,255,255,.04);
+  --red:#f05050;--orange:#f08030;--green:#34d399;
+  --border:rgba(255,255,255,.07);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:#000;color:var(--w80);font-family:'Poppins',sans-serif;font-size:13.5px;line-height:1.7;min-height:100vh}
+.wrap{max-width:1100px;margin:0 auto;padding:0 32px}
+
+/* LANDING */
+#landing{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;position:relative;overflow:hidden}
+#landing::before{content:'';position:fixed;top:-200px;left:50%;transform:translateX(-50%);width:700px;height:700px;background:radial-gradient(circle,rgba(142,63,241,.1) 0%,transparent 65%);pointer-events:none}
+.brand-tag{display:inline-flex;align-items:center;gap:8px;background:var(--pg);border:1px solid var(--pb);border-radius:4px;padding:5px 14px;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--purple3);margin-bottom:24px}
+.brand-dot{width:6px;height:6px;background:var(--purple2);border-radius:50%;animation:blink 2s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.landing-title{font-size:clamp(28px,5vw,48px);font-weight:800;color:var(--w);text-align:center;line-height:1.1;letter-spacing:-.03em;margin-bottom:14px}
+.landing-title span{color:var(--purple2)}
+.landing-sub{font-size:14px;color:var(--w50);text-align:center;max-width:520px;line-height:1.65;margin-bottom:36px;font-weight:400}
+.input-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:28px;width:100%;max-width:600px;position:relative}
+.input-card::before{content:'';position:absolute;top:0;left:30px;right:30px;height:1px;background:linear-gradient(90deg,transparent,var(--pb),transparent)}
+.input-lbl{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--w50);margin-bottom:9px;display:block}
+.input-row{display:flex;gap:10px;margin-bottom:14px}
+.url-input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 16px;font-family:'Poppins',sans-serif;font-size:13px;color:var(--w);outline:none;transition:border-color .2s;min-width:0}
+.url-input::placeholder{color:var(--w20)}
+.url-input:focus{border-color:var(--pb)}
+.analyze-btn{background:var(--purple);border:none;border-radius:8px;padding:12px 22px;font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;color:#fff;cursor:pointer;white-space:nowrap;transition:background .2s;flex-shrink:0}
+.analyze-btn:hover:not(:disabled){background:var(--purple2)}
+.analyze-btn:disabled{opacity:.5;cursor:not-allowed}
+.hint-lbl{font-size:10px;color:var(--w20);font-weight:500;letter-spacing:.04em;text-transform:uppercase;margin-bottom:7px}
+.hint-row{display:flex;gap:6px;flex-wrap:wrap}
+.hint-chip{font-size:11px;padding:3px 10px;border-radius:4px;background:var(--w08);border:1px solid var(--border);color:var(--w50);cursor:pointer;transition:color .15s,border-color .15s;font-weight:500}
+.hint-chip:hover{color:var(--purple3);border-color:var(--pb)}
+.err-box{background:rgba(240,80,80,.08);border:1px solid rgba(240,80,80,.25);border-radius:8px;padding:14px 16px;margin-top:16px;font-size:12px;color:var(--red);line-height:1.6;display:none}
+.err-box strong{display:block;margin-bottom:4px;font-size:13px}
+.err-box a{color:var(--orange);text-decoration:underline}
+.feats{display:flex;gap:22px;margin-top:40px;flex-wrap:wrap;justify-content:center}
+.feat{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--w50)}
+.feat-dot{width:5px;height:5px;border-radius:50%;background:var(--purple2);flex-shrink:0}
+
+/* LOADER */
+#loader{display:none;min-height:100vh;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:48px;text-align:center;background:#000}
+.loader-ring{width:52px;height:52px;border:2px solid var(--border);border-top-color:var(--purple2);border-radius:50%;animation:spin .85s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader-title{font-size:15px;font-weight:600;color:var(--w80)}
+.loader-step{font-size:11px;color:var(--purple3);font-weight:600;letter-spacing:.06em;text-transform:uppercase;min-height:18px}
+.prog-wrap{width:260px;height:2px;background:var(--border);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--purple),var(--purple2));border-radius:2px;width:0%;transition:width .8s ease}
+
+/* REPORT */
+#report{display:none;padding:40px 0;background:#000;min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:10px}
+.back-btn{background:var(--w08);border:1px solid var(--border);border-radius:6px;padding:7px 14px;font-family:'Poppins',sans-serif;font-size:12px;font-weight:600;color:var(--w50);cursor:pointer;transition:color .15s,border-color .15s}
+.back-btn:hover{color:var(--w80);border-color:var(--pb)}
+.new-btn{background:var(--purple);border:none;border-radius:6px;padding:7px 16px;font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;color:#fff;cursor:pointer;transition:background .2s}
+.new-btn:hover{background:var(--purple2)}
+
+/* report header */
+.rpt-hdr{padding:24px 0 20px;border-bottom:1px solid var(--border);margin-bottom:18px;position:relative;overflow:hidden}
+.rpt-hdr::before{content:'';position:absolute;top:-100px;right:-60px;width:380px;height:380px;background:radial-gradient(circle,rgba(142,63,241,.08) 0%,transparent 65%);pointer-events:none}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;background:var(--pg);border:1px solid var(--pb);border-radius:4px;padding:4px 12px;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--purple3);margin-bottom:14px}
+.rh-title{font-size:clamp(20px,3.5vw,32px);font-weight:800;color:var(--w);line-height:1.15;letter-spacing:-.025em;margin-bottom:10px}
+.rh-title .cp{color:var(--purple2)}.rh-title .cl{font-weight:300;color:var(--w80)}
+.rh-sub{font-size:12.5px;color:var(--w50);max-width:600px;line-height:1.65;margin-bottom:16px}
+.meta-bar{display:flex;flex-wrap:wrap;gap:6px}
+.meta-chip{font-size:10.5px;font-weight:500;padding:3px 11px;border-radius:4px;background:var(--w08);border:1px solid var(--border);color:var(--w50)}
+.meta-chip strong{color:var(--w);font-weight:700}
+
+/* score strip */
+.score-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:18px 0}
+.score-cell{background:var(--bg2);padding:20px 14px;text-align:center;position:relative}
+.score-cell::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px}
+.sc1::after{background:linear-gradient(90deg,var(--red),transparent)}
+.sc2::after{background:linear-gradient(90deg,var(--orange),transparent)}
+.sc3::after{background:linear-gradient(90deg,var(--purple2),transparent)}
+.sc4::after{background:linear-gradient(90deg,var(--green),transparent)}
+.score-val{font-size:30px;font-weight:800;line-height:1;margin-bottom:6px;letter-spacing:-.04em;display:block}
+.sv-red{color:var(--red)}.sv-orange{color:var(--orange)}.sv-purple{color:var(--purple2)}.sv-green{color:var(--green)}
+.score-lbl{font-size:9px;font-weight:600;color:var(--w50);text-transform:uppercase;letter-spacing:.07em;line-height:1.35;display:block}
+
+/* pull quote */
+.pull-quote{border-left:3px solid var(--purple);padding:12px 20px;background:var(--pg);border-radius:0 8px 8px 0;font-size:12.5px;font-weight:500;font-style:italic;color:var(--purple3);line-height:1.7;margin:14px 0 26px}
+
+/* section */
+.sec-head{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.sec-num{font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--purple2);border:1px solid var(--pb);background:var(--pg);border-radius:4px;padding:2px 8px;white-space:nowrap}
+.sec-title{font-size:16px;font-weight:700;color:var(--w);letter-spacing:-.015em}
+.sec-line{flex:1;height:1px;background:var(--border)}
+.r-sec{margin:0 0 34px}
+.divider{height:1px;background:var(--border);margin:30px 0}
+
+/* strengths */
+.str-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.str-card{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:16px;transition:border-color .2s}
+.str-card:hover{border-color:var(--pb)}
+.str-dot{width:5px;height:5px;border-radius:50%;background:var(--purple);display:block;margin-bottom:8px}
+.str-name{font-size:11.5px;font-weight:700;color:var(--w);margin-bottom:5px;display:block}
+.str-desc{font-size:11px;color:var(--w50);line-height:1.55}
+
+/* benchmark */
+.bm-intro{font-size:12px;color:var(--w50);margin-bottom:16px;line-height:1.6}
+.bm-intro strong{color:var(--w80)}
+.bm-group{margin-bottom:20px}
+.bm-group-lbl{font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+.bgl-text{color:var(--w50)}
+.bgl-line{flex:1;height:1px;background:var(--border)}
+.bgl-tag{font-size:8px;padding:2px 8px;border-radius:3px;font-weight:700;letter-spacing:.06em}
+.bgl-tag.local{background:rgba(52,211,153,.1);color:#34d399;border:1px solid rgba(52,211,153,.2)}
+.bgl-tag.global{background:var(--pg);color:var(--purple3);border:1px solid var(--pb)}
+.bgl-tag.subject{background:rgba(240,128,48,.1);color:var(--orange);border:1px solid rgba(240,128,48,.2)}
+.bm-grid-dyn{display:grid;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.bm-cell{background:var(--bg2);padding:11px 10px}
+.bm-cell.lb{background:#0d0f0d}
+.bm-cell.gb{background:#0d0d14}
+.bm-cell.sb{background:#0d0a14;border-top:2px solid var(--purple)}
+.bm-name{font-size:8.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--w50);margin-bottom:7px;display:block}
+.bm-cell.sb .bm-name{color:var(--purple3)}
+.bm-cell.lb .bm-name{color:#34d399}
+.bm-cell.gb .bm-name{color:var(--purple3)}
+.tags{display:flex;flex-wrap:wrap;gap:3px}
+.tag{font-size:9px;font-weight:500;padding:2px 6px;border-radius:3px;line-height:1.6}
+.tag.has{background:rgba(52,211,153,.08);color:#34d399;border:1px solid rgba(52,211,153,.2)}
+.tag.mis{background:rgba(240,80,80,.08);color:var(--red);border:1px solid rgba(240,80,80,.2)}
+
+/* gap cards */
+.gap-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.gap-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px;position:relative;overflow:hidden;transition:border-color .2s,transform .15s}
+.gap-card:hover{border-color:var(--pb);transform:translateY(-1px)}
+.gap-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.gap-card.pc::before{background:linear-gradient(90deg,var(--red),transparent 70%)}
+.gap-card.ph::before{background:linear-gradient(90deg,var(--orange),transparent 70%)}
+.gap-card.pm::before{background:linear-gradient(90deg,var(--purple),transparent 70%)}
+.gap-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px;margin-top:4px}
+.gap-title{font-size:11.5px;font-weight:700;color:var(--w);line-height:1.3}
+.badge{font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:2px 8px;border-radius:3px;white-space:nowrap;flex-shrink:0}
+.badge.c{background:rgba(240,80,80,.12);color:var(--red);border:1px solid rgba(240,80,80,.3)}
+.badge.h{background:rgba(240,128,48,.12);color:var(--orange);border:1px solid rgba(240,128,48,.3)}
+.badge.m{background:var(--pg);color:var(--purple3);border:1px solid var(--pb)}
+.gap-body{font-size:11px;color:var(--w50);line-height:1.65;margin-bottom:11px}
+.bm-row{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;align-items:center}
+.bm-lbl{font-size:9px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--w20);margin-right:3px}
+.bm-chip{font-size:10px;font-weight:500;padding:2px 7px;border-radius:3px;background:var(--w08);border:1px solid var(--border);color:var(--w80)}
+.fix-box{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px 13px}
+.fix-lbl{font-size:8.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--purple2);margin-bottom:3px;display:block}
+.fix-text{font-size:11px;color:var(--w80);line-height:1.55}
+.imp-row{display:flex;gap:6px;margin-top:8px}
+.imp-chip{font-size:9.5px;font-weight:600;padding:2px 8px;border-radius:3px;background:rgba(52,211,153,.07);border:1px solid rgba(52,211,153,.2);color:var(--green)}
+
+/* table */
+.tbl-wrap{border:1px solid var(--border);border-radius:10px;overflow:hidden}
+table{width:100%;border-collapse:collapse}
+thead th{background:var(--bg3);font-size:9px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--w50);padding:10px 13px;text-align:left;border-bottom:1px solid var(--border)}
+tbody td{padding:10px 13px;font-size:11.5px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--w80)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:nth-child(even) td{background:var(--w04)}
+.rr{color:var(--red);font-weight:700}.ro{color:var(--orange);font-weight:700}.rp{color:var(--purple2);font-weight:700}
+.dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.dl{background:var(--green)}.dm{background:var(--orange)}.dh{background:var(--red)}
+
+/* summary */
+.summ-box{background:linear-gradient(135deg,rgba(142,63,241,.1),rgba(142,63,241,.03));border:1px solid var(--pb);border-radius:12px;padding:26px 28px;margin:26px 0;position:relative;overflow:hidden}
+.summ-box::before{content:'';position:absolute;top:-50px;right:-50px;width:230px;height:230px;background:radial-gradient(circle,rgba(142,63,241,.07) 0%,transparent 70%);pointer-events:none}
+.summ-box h3{font-size:14px;font-weight:700;color:var(--purple3);margin-bottom:13px}
+.summ-box p{font-size:12.5px;color:var(--w80);line-height:1.75;margin-bottom:11px}
+.summ-box p:last-child{margin-bottom:0}
+.summ-box strong{color:var(--w);font-weight:700}
+.rpt-footer{border-top:1px solid var(--border);padding:20px 0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.ft-left{font-size:11.5px;color:var(--w50)}.ft-left strong{color:var(--purple2);font-weight:700}
+.ft-right{font-size:10px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--w20)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.fu{animation:fadeUp .4s ease both}
+
+@media(max-width:800px){.score-strip{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){.gap-grid{grid-template-columns:1fr}.str-grid{grid-template-columns:1fr 1fr}.wrap{padding:0 16px}}
+@media(max-width:440px){.str-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- LANDING -->
+<div id="landing">
+  <div class="brand-tag"><span class="brand-dot"></span>Troopod CRO Intelligence</div>
+  <h1 class="landing-title">PDP <span>Gap Analyzer</span></h1>
+  <p class="landing-sub">Paste any D2C brand URL. Get a full CRO audit benchmarked against real local and global competitors in their industry - in under 60 seconds.</p>
+  <div class="input-card">
+    <span class="input-lbl">Brand Website URL</span>
+    <div class="input-row">
+      <input class="url-input" id="urlInput" type="url" placeholder="https://www.brand.com" autocomplete="off"/>
+      <button class="analyze-btn" id="analyzeBtn" onclick="startAnalysis()">Analyze PDP</button>
+    </div>
+    <div class="hint-lbl">Try an example</div>
+    <div class="hint-row">
+      <span class="hint-chip" onclick="fill('https://www.giva.co')">giva.co</span>
+      <span class="hint-chip" onclick="fill('https://www.caratlane.com')">caratlane.com</span>
+      <span class="hint-chip" onclick="fill('https://www.mokobara.com')">mokobara.com</span>
+      <span class="hint-chip" onclick="fill('https://www.myglamm.com')">myglamm.com</span>
+      <span class="hint-chip" onclick="fill('https://www.bluestone.com')">bluestone.com</span>
+    </div>
+    <div class="err-box" id="errBox"></div>
+  </div>
+  <div class="feats">
+    <div class="feat"><span class="feat-dot"></span>18-point PDP gap framework</div>
+    <div class="feat"><span class="feat-dot"></span>4-5 real local competitors</div>
+    <div class="feat"><span class="feat-dot"></span>4-5 real global leaders</div>
+    <div class="feat"><span class="feat-dot"></span>Prioritized fix roadmap</div>
+  </div>
+</div>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="loader-ring"></div>
+  <div class="loader-title">Analyzing product detail pages</div>
+  <div class="loader-step" id="loaderStep">Fetching brand website</div>
+  <div class="prog-wrap"><div class="prog-fill" id="progFill"></div></div>
+</div>
+
+<!-- REPORT -->
+<div id="report">
+  <div class="wrap">
+    <div class="topbar">
+      <button class="back-btn" onclick="goBack()">Back</button>
+      <button class="new-btn" onclick="goBack()">New Analysis</button>
+    </div>
+    <div id="reportContent"></div>
+  </div>
+</div>
+
+<script>
+const API_KEY = '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';
+
+const $ = id => document.getElementById(id);
+function fill(u){ $('urlInput').value = u; }
+
+function esc(s){
+  if(s==null)return'';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function showErr(title, body, link){
+  const b=$('errBox');
+  b.innerHTML=`<strong>${title}</strong> ${body}${link?`<br><br><a href="${link}" target="_blank" rel="noreferrer">Check Anthropic Console</a>`:''}`;
+  b.style.display='block';
+}
+
+function goBack(){
+  $('report').style.display='none';
+  $('landing').style.display='flex';
+  $('reportContent').innerHTML='';
+  $('errBox').style.display='none';
+  $('analyzeBtn').disabled=false;
+  stopProg();
+}
+
+function classifyError(raw){
+  if(raw&&(raw.includes('exceeded_limit')||raw.includes('5h')||raw.includes('rate_limit')))
+    return{title:'API Rate Limit Reached',body:'Your 5-hour usage window is exceeded. Please wait for it to reset.',link:'https://console.anthropic.com'};
+  if(raw&&(raw.includes('invalid_api_key')||raw.includes('401')||raw.includes('authentication')))
+    return{title:'Invalid API Key',body:'The API key is invalid or expired. Please rotate it in the Anthropic Console.',link:'https://console.anthropic.com'};
+  if(raw&&raw.includes('overloaded'))
+    return{title:'Anthropic API Overloaded',body:'The API is temporarily busy. Please wait a moment and try again.',link:null};
+  return{title:'Analysis Failed',body:raw||'Unknown error. Please try again.',link:null};
+}
+
+/* ── loader animation ── */
+const STEPS=[
+  'Fetching brand website',
+  'Identifying industry and country',
+  'Finding local competitors',
+  'Finding global competitors',
+  'Auditing competitor PDPs',
+  'Scanning subject brand PDP',
+  'Mapping 18-point gap framework',
+  'Benchmarking conversion features',
+  'Scoring gaps by revenue impact',
+  'Building prioritized roadmap',
+];
+let _st,_pt,_pv=0,_si=0;
+function startProg(){
+  _si=0;_pv=0;
+  $('loaderStep').textContent=STEPS[0];
+  $('progFill').style.width='0%';
+  _st=setInterval(()=>{_si=(_si+1)%STEPS.length;$('loaderStep').textContent=STEPS[_si];},3200);
+  _pt=setInterval(()=>{_pv=Math.min(_pv+Math.random()*2.8,88);$('progFill').style.width=_pv+'%';},600);
+}
+function stopProg(){clearInterval(_st);clearInterval(_pt);_pv=0;$('progFill').style.width='0%';}
+function doneProg(){clearInterval(_st);clearInterval(_pt);$('progFill').style.width='100%';}
+
+/* ── agentic loop with proper tool_use handling ── */
+async function agentCall(system, userMsg){
+  const tools=[{type:'web_search_20250305',name:'web_search'}];
+  let messages=[{role:'user',content:userMsg}];
+
+  for(let i=0;i<12;i++){
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': API_KEY,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:7000,
+        system,
+        tools,
+        messages
+      })
+    });
+
+    let data;
+    try{data=await res.json();}catch(e){throw new Error('Network error - could not parse API response.');}
+    if(!res.ok) throw new Error(JSON.stringify(data));
+    if(data.error) throw new Error(JSON.stringify(data.error));
+
+    const content=data.content||[];
+    const text=content.filter(b=>b.type==='text').map(b=>b.text).join('');
+
+    if(data.stop_reason==='end_turn') return text;
+
+    if(data.stop_reason==='tool_use'){
+      messages.push({role:'assistant',content});
+      const results=content.filter(b=>b.type==='tool_use').map(b=>({
+        type:'tool_result',
+        tool_use_id:b.id,
+        content:b.content||'No results.'
+      }));
+      if(results.length) messages.push({role:'user',content:results});
+      continue;
+    }
+
+    return text;
+  }
+  throw new Error('Exceeded maximum search iterations. Please try again.');
+}
+
+/* ── JSON extractor ── */
+function extractJSON(raw){
+  if(!raw)return null;
+  const clean=s=>{
+    try{return JSON.parse(s);}catch(_){}
+    try{return JSON.parse(s.replace(/[\u2018\u2019]/g,"'").replace(/[\u201C\u201D]/g,'"').replace(/[\u2014\u2013]/g,'-'));}catch(_){}
+    return null;
+  };
+  const m1=raw.match(/```json\s*([\s\S]*?)\s*```/);if(m1){const r=clean(m1[1]);if(r)return r;}
+  const m2=raw.match(/```\s*([\s\S]*?)\s*```/);if(m2){const r=clean(m2[1]);if(r)return r;}
+  const s=raw.indexOf('{'),e=raw.lastIndexOf('}');
+  if(s!==-1&&e>s){const r=clean(raw.slice(s,e+1));if(r)return r;}
+  return null;
+}
+
+/* ── MAIN ── */
+async function startAnalysis(){
+  const url=$('urlInput').value.trim();
+  if(!url){showErr('Please enter a brand URL.','',null);return;}
+  if(!url.startsWith('http')){showErr('Invalid URL','Enter a full URL starting with https://.',null);return;}
+
+  $('errBox').style.display='none';
+  $('landing').style.display='none';
+  $('loader').style.display='flex';
+  $('analyzeBtn').disabled=true;
+  startProg();
+
+  try{
+    const result=await agentCall(
+      `You are a senior CRO analyst at Troopod. You audit e-commerce PDPs against an 18-point conversion framework. You research the brand's REAL competitors - both local (same country) and global leaders in their industry. Respond with ONLY valid JSON. No markdown. No code fences. No text before or after. Begin with { end with }. Straight double quotes only. No trailing commas. No em dashes - use hyphens.`,
+
+      `Analyze the PDP of this brand: ${url}
+
+STEP 1 - Search the URL. Identify: brand name, industry/category, home country, price range.
+
+STEP 2 - Find real competitors by searching:
+- Top 4-5 LOCAL competitors (same country, same industry as this brand)
+- Top 4-5 GLOBAL leaders in this industry worldwide
+Research who they actually are - do not use generic examples.
+
+STEP 3 - Visit 1-2 actual product pages for the subject brand AND each competitor. Check which PDP features each has:
+1.Star ratings/review count visible  2.Warranty duration stated  3.Returns policy with timeframe  4.Delivery date or ZIP/pincode lookup  5.BNPL/EMI/installments near price  6.Customer testimonials or UGC  7.Virtual try-on or home trial  8.Precise specs (dimensions/weight/materials)  9.Sustainability narrative  10.Social proof badges (bestseller/wishlist count)  11.Styling tips or occasion context  12.Live chat or expert consultation CTA  13.Personalization or customization option  14.Auth or quality certificate callout  15.Loyalty or membership benefit shown  16.Product care guide  17.Gift packaging or gifting CTA  18.Price breakdown or material weight
+
+STEP 4 - Return ONLY this JSON (all fields required, real data only):
+{
+  "brandName":"Exact Brand Name",
+  "industry":"e.g. Fine Jewelry / Luggage / Skincare",
+  "country":"Brand home country",
+  "overallScore":"X/10",
+  "criticalGapCount":4,
+  "ratingStatus":"Not visible OR X stars",
+  "uniqueAdvantage":"One honest sentence about their best PDP strength. Hyphens not em dashes.",
+  "strengths":[
+    {"name":"Title","desc":"2 sentences specific to this brand. Hyphens."},
+    {"name":"Title","desc":"2 sentences."},
+    {"name":"Title","desc":"2 sentences."}
+  ],
+  "brandFeatures":{
+    "present":["Feature A","Feature B","Feature C","Feature D","Feature E"],
+    "missing":["Missing A","Missing B","Missing C","Missing D","Missing E","Missing F"]
+  },
+  "localCompetitors":[
+    {"name":"Brand","country":"Country","features":["Feature 1","Feature 2","Feature 3","Feature 4","Feature 5"]}
+  ],
+  "globalCompetitors":[
+    {"name":"Brand","country":"Country","features":["Feature 1","Feature 2","Feature 3","Feature 4","Feature 5"]}
+  ],
+  "gaps":[
+    {"title":"Gap title","priority":"Critical","body":"2 sentences specific to this brand vs its actual competitors. Hyphens.","benchmarks":["Competitor A","Competitor B"],"fix":"Actionable fix. Hyphens.","impact":"CVR +X%","effort":"Low"}
+  ],
+  "roadmap":[
+    {"rank":"#1","rankClass":"r","gap":"Short name","impact":"Impact","effort":"Low","effortClass":"low","proof":"Competitor name"}
+  ],
+  "summary":{
+    "p1":"What is broken and why it costs revenue. Hyphens.",
+    "p2":"What assets are underused. Hyphens.",
+    "p3":"Quick wins and estimated CVR lift. Hyphens."
+  }
+}
+Rules: localCompetitors 4-5 real brands same country+industry. globalCompetitors 4-5 real global leaders. gaps 10-14 items Critical first then High then Medium. roadmap 10-12 items rankClass r for #1-6 o for #7-12 p for #13+. effortClass low/med/high only. Score most brands 3-6/10. No em dashes. No emojis. Return ONLY the JSON.`
+    );
+
+    doneProg();
+    const data=extractJSON(result);
+    if(!data) throw new Error('Could not parse JSON from response. Preview: '+(result||'').slice(0,300));
+    renderReport(data, url);
+
+  }catch(err){
+    doneProg();
+    $('loader').style.display='none';
+    $('landing').style.display='flex';
+    $('analyzeBtn').disabled=false;
+    const {title,body,link}=classifyError(err.message||'');
+    showErr(title,body,link);
+  }
+}
+
+/* ── RENDER ── */
+function renderReport(d, url){
+  const domain=(()=>{try{return new URL(url).hostname.replace('www.','');}catch{return url;}})();
+  const dateStr=new Date().toLocaleString('en-US',{month:'long',year:'numeric'});
+  const name=d.brandName||domain;
+  const scoreNum=parseFloat((d.overallScore||'4').split('/')[0])||4;
+  const scoreColor=scoreNum<=4?'sv-red':scoreNum<=6?'sv-orange':'sv-green';
+  const critCount=d.criticalGapCount||(d.gaps||[]).filter(g=>(g.priority||'').toLowerCase()==='critical').length;
+  const localCount=(d.localCompetitors||[]).length;
+  const globalCount=(d.globalCompetitors||[]).length;
+
+  /* strengths */
+  const strHTML=(d.strengths||[]).map(s=>`
+    <div class="str-card">
+      <span class="str-dot"></span>
+      <span class="str-name">${esc(s.name)}</span>
+      <span class="str-desc">${esc(s.desc)}</span>
+    </div>`).join('');
+
+  /* subject brand tags */
+  const presentTags=(d.brandFeatures?.present||[]).map(f=>`<span class="tag has">${esc(f)}</span>`).join('');
+  const missingTags=(d.brandFeatures?.missing||[]).map(f=>`<span class="tag mis">${esc(f)}</span>`).join('');
+
+  /* competitor grid builder */
+  function bmGrid(comps, cls){
+    if(!comps?.length)return'';
+    const cols=Math.min(comps.length,5);
+    return`<div class="bm-grid-dyn" style="grid-template-columns:repeat(${cols},1fr)">
+      ${comps.map(c=>`
+        <div class="bm-cell ${cls}">
+          <span class="bm-name">${esc(c.name)}${c.country?` <span style="opacity:.45;font-weight:400">(${esc(c.country)})</span>`:''}</span>
+          <div class="tags">${(c.features||[]).map(f=>`<span class="tag has">${esc(f)}</span>`).join('')}</div>
+        </div>`).join('')}
+    </div>`;
+  }
+
+  /* gap cards */
+  const gapsHTML=(d.gaps||[]).map(g=>{
+    const p=(g.priority||'Medium').toLowerCase();
+    const pc=p==='critical'?'pc':p==='high'?'ph':'pm';
+    const bc=p==='critical'?'c':p==='high'?'h':'m';
+    const bms=(g.benchmarks||[]).map(b=>`<span class="bm-chip">${esc(b)}</span>`).join('');
+    return`<div class="gap-card ${pc}">
+      <div class="gap-head">
+        <div class="gap-title">${esc(g.title)}</div>
+        <span class="badge ${bc}">${esc(g.priority||'Medium')}</span>
+      </div>
+      <div class="gap-body">${esc(g.body)}</div>
+      ${bms?`<div class="bm-row"><span class="bm-lbl">Benchmarks:</span>${bms}</div>`:''}
+      <div class="fix-box">
+        <span class="fix-lbl">Fix</span>
+        <span class="fix-text">${esc(g.fix)}</span>
+      </div>
+      <div class="imp-row">
+        <span class="imp-chip">${esc(g.impact||'')}</span>
+        <span class="imp-chip">Effort: ${esc(g.effort||'Medium')}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  /* roadmap */
+  const roadHTML=(d.roadmap||[]).map(r=>{
+    const rc=r.rankClass==='r'?'rr':r.rankClass==='o'?'ro':'rp';
+    const dc=r.effortClass==='low'?'dl':r.effortClass==='high'?'dh':'dm';
+    return`<tr>
+      <td><span class="${rc}">${esc(r.rank)}</span></td>
+      <td>${esc(r.gap)}</td>
+      <td>${esc(r.impact)}</td>
+      <td><span class="dot ${dc}"></span>${esc(r.effort)}</td>
+      <td>${esc(r.proof)}</td>
+    </tr>`;
+  }).join('');
+
+  $('reportContent').innerHTML=`
+    <div class="rpt-hdr fu">
+      <div class="eyebrow"><span style="display:inline-block;width:6px;height:6px;background:var(--purple2);border-radius:50%;margin-right:6px"></span>Troopod CRO Intelligence / PDP Audit</div>
+      <div class="rh-title">${esc(name)}<br><span class="cp">PDP Gap Analysis</span> <span class="cl">vs ${localCount+globalCount} Real Competitors</span></div>
+      <p class="rh-sub">Benchmarked against ${localCount} local ${esc(d.country||'')} competitors and ${globalCount} global leaders in the ${esc(d.industry||'')} space.</p>
+      <div class="meta-bar">
+        <div class="meta-chip">Brand: <strong>${esc(name)}</strong></div>
+        <div class="meta-chip">Industry: <strong>${esc(d.industry||'--')}</strong></div>
+        <div class="meta-chip">Country: <strong>${esc(d.country||'--')}</strong></div>
+        <div class="meta-chip">Gaps Found: <strong>${(d.gaps||[]).length}</strong></div>
+        <div class="meta-chip">Critical: <strong>${critCount}</strong></div>
+        <div class="meta-chip">Date: <strong>${dateStr}</strong></div>
+      </div>
+    </div>
+
+    <div class="score-strip fu">
+      <div class="score-cell sc1"><span class="score-val ${scoreColor}">${esc(d.overallScore||'4/10')}</span><span class="score-lbl">PDP Benchmark Score</span></div>
+      <div class="score-cell sc2"><span class="score-val sv-orange">${critCount}</span><span class="score-lbl">Critical Gaps Found</span></div>
+      <div class="score-cell sc3"><span class="score-val sv-purple">${esc(d.ratingStatus||'None')}</span><span class="score-lbl">Star Ratings on PDP</span></div>
+      <div class="score-cell sc4"><span class="score-val sv-green">${localCount+globalCount}</span><span class="score-lbl">Competitors Benchmarked</span></div>
+    </div>
+
+    ${d.uniqueAdvantage?`<div class="pull-quote">${esc(d.uniqueAdvantage)}</div>`:''}
+
+    ${strHTML?`
+    <div class="r-sec fu">
+      <div class="sec-head"><span class="sec-num">01</span><span class="sec-title">What ${esc(name)} Currently Does Right</span><div class="sec-line"></div></div>
+      <div class="str-grid">${strHTML}</div>
+    </div>
+    <div class="divider"></div>`:''}
+
+    <div class="r-sec fu">
+      <div class="sec-head"><span class="sec-num">02</span><span class="sec-title">Competitive PDP Benchmark</span><div class="sec-line"></div></div>
+      <p class="bm-intro">Researched and compared against <strong>${localCount} local ${esc(d.country||'')} competitors</strong> and <strong>${globalCount} global leaders</strong> in the ${esc(d.industry||'')} space. Features shown are what each brand actually has on their PDPs.</p>
+
+      ${localCount?`<div class="bm-group">
+        <div class="bm-group-lbl"><span class="bgl-text">Local Competitors</span><span class="bgl-tag local">${esc(d.country||'Local')}</span><div class="bgl-line"></div></div>
+        ${bmGrid(d.localCompetitors,'lb')}
+      </div>`:''}
+
+      ${globalCount?`<div class="bm-group">
+        <div class="bm-group-lbl"><span class="bgl-text">Global Leaders</span><span class="bgl-tag global">Worldwide</span><div class="bgl-line"></div></div>
+        ${bmGrid(d.globalCompetitors,'gb')}
+      </div>`:''}
+
+      <div class="bm-group">
+        <div class="bm-group-lbl"><span class="bgl-text">Subject Brand</span><span class="bgl-tag subject">Audited</span><div class="bgl-line"></div></div>
+        <div class="bm-grid-dyn" style="grid-template-columns:1fr">
+          <div class="bm-cell sb">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+              <span class="bm-name" style="margin-bottom:0">${esc(name)}</span>
+              <span style="font-size:8px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:3px;background:var(--pg);color:var(--purple3);border:1px solid var(--pb)">Subject Brand</span>
+            </div>
+            <div class="tags">${presentTags}${missingTags}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="r-sec fu">
+      <div class="sec-head"><span class="sec-num">03</span><span class="sec-title">PDP Gaps - Ranked by Revenue Impact</span><div class="sec-line"></div></div>
+      <div class="gap-grid">${gapsHTML}</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="r-sec fu">
+      <div class="sec-head"><span class="sec-num">04</span><span class="sec-title">Prioritized Execution Roadmap</span><div class="sec-line"></div></div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Priority</th><th>Gap</th><th>CVR Impact</th><th>Effort</th><th>Benchmark Proof</th></tr></thead>
+          <tbody>${roadHTML}</tbody>
+        </table>
+      </div>
+    </div>
+
+    ${d.summary?`
+    <div class="summ-box fu">
+      <h3>The Diagnosis in Plain Language</h3>
+      ${d.summary.p1?`<p>${esc(d.summary.p1)}</p>`:''}
+      ${d.summary.p2?`<p>${esc(d.summary.p2)}</p>`:''}
+      ${d.summary.p3?`<p>${esc(d.summary.p3)}</p>`:''}
+    </div>`:''}
+
+    <div class="rpt-footer fu">
+      <div class="ft-left">Prepared by <strong>Troopod</strong> - CRO Agency and AI SaaS for D2C Brands</div>
+      <div class="ft-right">${dateStr} / Confidential / ${esc(name)} PDP Audit</div>
+    </div>`;
+
+  $('loader').style.display='none';
+  $('report').style.display='block';
+  window.scrollTo(0,0);
+}
+
+/* enter key */
+document.addEventListener('DOMContentLoaded',()=>{
+  $('urlInput').addEventListener('keydown',e=>{if(e.key==='Enter')startAnalysis();});
+});
+</script>
+</body>
+</html>
